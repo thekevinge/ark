@@ -87,4 +87,10 @@ jobs:
 
       - name: Deploy CFN
         working-directory: ./lambdas
-        run: sam deploy --stack-name prod-ArkStack --s3-bucket ${{ secrets.AWS_CFN_PRODUCTION_BUCKET }} --s3-prefix prod-ArkStack/cfn --capabilities CAPABILITY_NAMED_IAM --parameter-overrides ParamEnvironment=prod
+        run: |
+          sam deploy --stack-name prod-ArkStack \
+          --s3-bucket ${{ secrets.AWS_CFN_PRODUCTION_BUCKET }} \
+          --s3-prefix prod-ArkStack/cfn --capabilities CAPABILITY_NAMED_IAM \
+          --parameter-overrides ParamEnvironment=prod \
+          --no-fail-on-empty-changset
+
