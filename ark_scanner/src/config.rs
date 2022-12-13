@@ -17,6 +17,8 @@ pub struct ScannerOptions {
     /// Max number of retries on API failure
     /// Optional in env file
     pub api_retry_limit: Option<u64>,
+    /// API key
+    pub log_api_key: Option<String>,
     /// Scanner location
     /// Optional in .env file, defaults to 'dev-location'
     pub location: String,
@@ -53,6 +55,7 @@ pub fn load_scanner_opts() -> ScannerOptions {
         reconnect_cmd: load_env_var("RECONNECT_CMD"),
         log_api_url: load_env_var_optional("LOG_API_URL"),
         api_retry_limit: load_env_var_optional("API_RETRY_LIMIT"),
+        log_api_key: load_env_var_optional("LOG_API_KEY"),
         location: load_env_var_optional("SCANNER_LOCATION")
             .unwrap_or_else(|| String::from("dev-location")),
     }

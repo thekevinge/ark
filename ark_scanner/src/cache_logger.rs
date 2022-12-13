@@ -1,6 +1,10 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use log::log;
+use reqwest::{
+    blocking::{Client, Response},
+    Result,
+};
 use serde::Serialize;
 
 // Generic wrapper for local and API logger
@@ -15,10 +19,15 @@ impl<'a> Logger for CacheLogger<'a> {
 }
 
 impl<'a> CacheLogger<'a> {
-    pub fn new(url: Option<String>, max_retries: Option<u64>, failure_cb: impl Fn() + 'a) -> Self {
+    pub fn new(
+        url: Option<String>,
+        api_key: Option<String>,
+        max_retries: Option<u64>,
+        failure_cb: impl Fn() + 'a,
+    ) -> Self {
         if let (Some(u), Some(m)) = (url, max_retries) {
             Self {
-                inner: Box::new(APILogger::new(u, m, Box::new(failure_cb))),
+                inner: Box::new(APILogger::new(u, api_key, m, Box::new(failure_cb))),
             }
         } else {
             Self {
@@ -38,14 +47,23 @@ struct APILogger<'a> {
     max_retries: u64,
     url: String,
     retries_exceeded_cb: Box<dyn Fn() + 'a>,
+    http_client: Client,
+    api_key: Option<String>,
 }
 
 impl<'a> APILogger<'a> {
-    pub fn new(url: String, max_retries: u64, retries_exceeded_cb: Box<dyn Fn() + 'a>) -> Self {
+    pub fn new(
+        url: String,
+        api_key: Option<String>,
+        max_retries: u64,
+        retries_exceeded_cb: Box<dyn Fn() + 'a>,
+    ) -> Self {
         Self {
             url,
             max_retries,
             retries_exceeded_cb,
+            http_client: Client::new(),
+            api_key,
         }
     }
 }
@@ -67,20 +85,18 @@ impl<'a> Logger for APILogger<'a> {
         };
 
         while failure_count < self.max_retries {
-            let res = match reqwest::blocking::Client::new()
-                .post(&self.url)
-                .json(&LogBody {
+            let response = send_request(
+                &self.http_client,
+                &self.url,
+                &self.api_key,
+                &LogBody {
                     location: location.clone(),
                     device_count,
                     created_at: epoch_time,
-                })
-                .send()
-            {
-                Ok(res) => res.error_for_status(),
-                Err(e) => Err(e),
-            };
+                },
+            );
 
-            match res {
+            match response {
                 Ok(_) => {
                     log!(
                         log::Level::Info,
@@ -102,8 +118,27 @@ impl<'a> Logger for APILogger<'a> {
                 }
             }
         }
+    }
+}
 
-        // self.retries_exceeded_cb.as_mut()();
+fn send_request<T>(
+    client: &Client,
+    url: &String,
+    api_key: &Option<String>,
+    body: &T,
+) -> Result<Response>
+where
+    T: Serialize,
+{
+    let mut request = client.post(url).json(body);
+
+    if let Some(api_key) = api_key {
+        request = request.header("x-api-key", api_key);
+    }
+
+    match request.send() {
+        Ok(r) => r.error_for_status(),
+        e => e,
     }
 }
 

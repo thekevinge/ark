@@ -123,9 +123,12 @@ fn log_mac_cache_periodic(
     options: &ScannerOptions,
     reconnect_limiter: &NetworkCommandLimiter,
 ) {
-    let mut logger = CacheLogger::new(options.log_api_url.clone(), options.api_retry_limit, || {
-        reconnect_limiter.run()
-    });
+    let mut logger = CacheLogger::new(
+        options.log_api_url.clone(),
+        options.log_api_key.clone(),
+        options.api_retry_limit,
+        || reconnect_limiter.run(),
+    );
 
     loop {
         thread::sleep(Duration::from_secs(options.mac_cache_log_period));
