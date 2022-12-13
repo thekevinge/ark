@@ -1,4 +1,6 @@
-name: CI Rust Scanner
+# Only runs on PR's 
+# Push's are covered by aws-deploy.yaml
+name: CI Rust Lambdas
 
 on:
   workflow_dispatch:
@@ -7,12 +9,7 @@ on:
     branches:
       - 'main'
     paths:
-      - 'ark_scanner/**'
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'ark_scanner/**'
+      - 'lambdas/**'
 
 jobs:
   cargo-fmt:
@@ -23,11 +20,11 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: 1.65.0
           profile: minimal
           components: rustfmt
 
-      - run: cd ark_scanner && cargo fmt --all --check
+      - run: cd lambdas && cargo fmt --all --check
 
   cargo-clippy:
     name: Cargo clippy
@@ -37,11 +34,11 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: 1.65.0
           profile: minimal
           components: clippy
 
-      - run: cd ark_scanner && cargo clippy --all-targets -- -D warnings
+      - run: cd lambdas && cargo clippy --all-targets -- -D warnings
 
   cargo-test:
     name: Cargo test
@@ -54,5 +51,5 @@ jobs:
           toolchain: 1.65.0
           profile: minimal
 
-      - run: cd ark_scanner && cargo test
+      - run: cd lambdas && cargo test
 

@@ -69,7 +69,7 @@ pub fn select_default_interface(interfaces: &[NetworkInterface]) -> Option<Netwo
                 && !interface.is_loopback()
                 && !interface.ips.is_empty()
                 && interface.ips.iter().any(|ip| ip.is_ipv4())
-                && interface.mac != None
+                && interface.mac.is_some()
         })
         .cloned()
 }
